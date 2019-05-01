@@ -92,10 +92,26 @@ def borrar(nombre, condicion):
         print("borrado!")
 
 
+def com_sig(line,condition):
+    pos = 1;
+    if condition[pos] == '=':
+        if int(line[condition[pos - 1]]) == int(condition[pos + 1]):
+            return True
+            #print(linea[conditions[pos - 1]])
+    elif condition[1] == '<':
+        if int(line[condition[pos - 1]]) < int(condition[pos + 1]):
+            return True
+            # print(linea[conditions[pos - 1]])
+    elif condition[1] == '>':
+        if int(line[condition[pos - 1]]) > int(condition[pos + 1]):
+            return True
+            # print(linea[conditions[pos - 1]])
+    return False
+
 def selectA(nombreTabla, cols='*', conditions=[]):
     ruta = 'BD/' + nombreTabla + '.txt'
     archivo = open(ruta, 'r')
-    
+
     if(cols == '*'):
         print("****")
         lineas = csv.reader(archivo)
@@ -106,30 +122,47 @@ def selectA(nombreTabla, cols='*', conditions=[]):
             print('cols -------------------')
             #posCols = comprobarCols(nombreTabla)
             lineas = csv.DictReader(archivo)
-            print(cols)            
-            for linea in lineas:          
+            print(cols)
+            for linea in lineas:
                 text = ''
-                for col in cols:                
+                for col in cols:
                     #print(col)
                     text += linea[col]+" "
                 print(text)
         else:  # SELECCIOMA c1,c2 DESDE tabla DOMDE C1>0 OR C2<5
-            print("Domde ------------", len(conditions))
-            lineas = csv.DictReader(archivo)    
-            pos = 1       
-            np.array([])
-            #while(pos<6): # 6 es la pos del OR 
+            print("Domde ------------")
+            lineas = csv.DictReader(archivo)
+            pos = 1
+
+            #np.array([])
+            #while(pos<6): # 6 es la pos del OR
             print(conditions[pos])
             for linea in lineas:
-                if conditions[pos] == '=':
-                    if int(linea[conditions[pos - 1]]) == int(conditions[pos + 1]):
-                        print(linea[conditions[pos - 1]])
-                elif conditions[1] == '<':
-                    if int(linea[conditions[pos - 1]]) < int(conditions[pos + 1]):
-                        print(linea[conditions[pos - 1]])
-                elif conditions[1] == '>':                   
-                    if int(linea[conditions[pos - 1]]) > int(conditions[pos + 1]):
-                        print(linea[conditions[pos - 1]])
+                logOps = []
+                arrTF = []
+                cont = 1
+                for i in range(1,len(conditions),4):
+                    cont = cont + 1
+                    #print(conditions[i-1:i+2])
+                    mini_cond = com_sig(linea,conditions[i-1:i+2])
+                    arrTF.append(mini_cond)
+                    if ( cont < (len(conditions)+1)/4):
+                        logOps.append(conditions[i+2])
+                    #print (arrTF)
+                    #print (logOps)
+
+                boolResp = arrTF[0]
+                for i in range(len(logOps)):
+                    if logOps[i] == 'AND':
+                        boolResp = boolResp and arrTF[i+1]
+                    elif i == 'OR':
+                        boolResp = boolResp or arrTF[i+1]
+                if boolResp:
+                    text = ''
+                    for col in cols:
+                        text += linea[col]+" "
+                    print(text)
+
     archivo.close()
 
 def select(nombre, condicion):
@@ -282,7 +315,7 @@ def formatearConditions(strComm):
         p = strComm.find('>', i,posAND_OR)
         if (p >0):
             if strComm[p] != ' ':
-                strComm = strComm[:p]+" "+strComm[p:]                
+                strComm = strComm[:p]+" "+strComm[p:]
             if strComm[p + 1] != ' ':
                 strComm = strComm[:p+2]+" "+strComm[p+2:]
                 #print('a',strComm)
@@ -304,8 +337,8 @@ def formatearConditions(strComm):
                 if (p > 0):
                     if strComm[p] != ' ':
                         strComm = strComm[:p] + " " + strComm[p:]
-                    if strComm[p + 2] != ' ':                        
-                        strComm = strComm[:p + 2] + " " + strComm[p+2:]                    
+                    if strComm[p + 2] != ' ':
+                        strComm = strComm[:p + 2] + " " + strComm[p+2:]
                     i = posAND_OR
                     posAND_OR = len(strComm)
                     coumt-=1
@@ -318,7 +351,7 @@ def getConditions(strComm):
     ArrComm = strComm.split()
     #print(ArrComm)
     return ArrComm
-    
+
 
 """def getNameTable(commOri, keyWord):
     posF = commOri.find(keyWord)
@@ -340,11 +373,11 @@ def printHelp():
 # insert_n('estudiantes', elementos, 500)
 while(1):
     #printHelp()
-    #comandoOrig = 'CREA_TABLA a(a1, int; a2 , int; a3, int)'  # input()
-    #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (-1,8,4)'  # input()
+    #comandoOrig = 'CREA_TABLA a (a1, int; a2 , int; a3, int);'  # input()
+    #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (15,3,7);'  # input()
     #comandoOrig= 'SELECCIONA * DESDE a;'  # input()
     #comandoOrig= 'SELECCIONA a1, a3 DESDE a;'  # input()
-    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 ;'#AND a2 < 8 OR a1 > a3;'  # input()
+    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 ;'#AND a2 < 8 OR a1 > 3;'  # input()
     print(comandoOrig)
     comandoOrig = comandoOrig[:len(comandoOrig) - 1]  # quita ; final
     comando = comandoOrig.split()
@@ -422,21 +455,21 @@ while(1):
     # select c1,c2 DESDE [tabla] DONDE [condicion] and [condicion]
 
     elif comando[0] == 'SELECCIONA':  # considerar que la condicion va separada por ' '
-        nombreTabla = ''        
+        nombreTabla = ''
         colsSelect = []
         if (comando[1] == '*'):
             #print(">>>>",comando[1])
             nombreTabla = comando[3]
             selectA(nombreTabla)
-        else:                     
+        else:
             posFim = comandoOrig.find('DESDE')
             colsSelect = comandoOrig[comandoOrig.find('SELECCIONA') + 11: posFim-1]
-            colsSelect = colsSelect.split(',') 
-            posDomde = comandoOrig.find('DONDE')  
+            colsSelect = colsSelect.split(',')
+            posDomde = comandoOrig.find('DONDE')
             for j in range(len(colsSelect)):
-                colsSelect[j] = colsSelect[j].strip()  # strip() quita espacios blamco         
-            
-            if (posDomde <0):                
+                colsSelect[j] = colsSelect[j].strip()  # strip() quita espacios blamco
+
+            if (posDomde <0):
                 nombreTabla = comandoOrig[posFim + 6:]
                 #print(colsSelect)
                 for j in range(len(colsSelect)):
@@ -444,7 +477,7 @@ while(1):
                 selectA(nombreTabla, colsSelect)
 
             else:  # case de where
-                nombreTabla = comandoOrig[posFim + 6:posDomde].strip()                                
+                nombreTabla = comandoOrig[posFim + 6:posDomde].strip()
                 strConditions = comandoOrig[posDomde + 5:]
                 strConditions = getConditions(strConditions)
                 #print(colsSelect)
