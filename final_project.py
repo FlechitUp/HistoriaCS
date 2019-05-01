@@ -1,6 +1,7 @@
 from shutil import copyfile
 from random import randint, uniform, random
 import csv
+import numpy as np
 """
     para copiar archivos se usa esa libreria con el comando
     copyfile(fuente_origen, fuente_destino)
@@ -91,27 +92,45 @@ def borrar(nombre, condicion):
         print("borrado!")
 
 
-def selectA(nombreTabla, cols='*'):
+def selectA(nombreTabla, cols='*', conditions=[]):
     ruta = 'BD/' + nombreTabla + '.txt'
     archivo = open(ruta, 'r')
     
     if(cols == '*'):
+        print("****")
         lineas = csv.reader(archivo)
         for linea in lineas:
             print(linea)
     else:
-        #posCols = comprobarCols(nombreTabla)
-        lineas = csv.DictReader(archivo)
-        print(cols)
-        text=''
-        for linea in lineas:
-            for col in cols:                
-                #print(col)
-                text += linea[col]+" "
-            print(text)
+        if len(conditions) == 0: # sim doomde  , SELECCIOMA c1,c2 DESDE tabla
+            print('cols -------------------')
+            #posCols = comprobarCols(nombreTabla)
+            lineas = csv.DictReader(archivo)
+            print(cols)            
+            for linea in lineas:          
+                text = ''
+                for col in cols:                
+                    #print(col)
+                    text += linea[col]+" "
+                print(text)
+        else:  # SELECCIOMA c1,c2 DESDE tabla DOMDE C1>0 OR C2<5
+            print("Domde ------------", len(conditions))
+            lineas = csv.DictReader(archivo)    
+            pos = 1       
+            np.array([])
+            #while(pos<6): # 6 es la pos del OR 
+            print(conditions[pos])
+            for linea in lineas:
+                if conditions[pos] == '=':
+                    if int(linea[conditions[pos - 1]]) == int(conditions[pos + 1]):
+                        print(linea[conditions[pos - 1]])
+                elif conditions[1] == '<':
+                    if int(linea[conditions[pos - 1]]) < int(conditions[pos + 1]):
+                        print(linea[conditions[pos - 1]])
+                elif conditions[1] == '>':                   
+                    if int(linea[conditions[pos - 1]]) > int(conditions[pos + 1]):
+                        print(linea[conditions[pos - 1]])
     archivo.close()
-
-
 
 def select(nombre, condicion):
     ruta = 'BD/' + nombre + '.txt'
@@ -266,7 +285,7 @@ def formatearConditions(strComm):
                 strComm = strComm[:p]+" "+strComm[p:]                
             if strComm[p + 1] != ' ':
                 strComm = strComm[:p+2]+" "+strComm[p+2:]
-                print('a',strComm)
+                #print('a',strComm)
             i = posAND_OR
             posAND_OR = len(strComm)
             coumt -=1
@@ -297,7 +316,9 @@ def formatearConditions(strComm):
 def getConditions(strComm):
     strComm = formatearConditions(strComm)
     ArrComm = strComm.split()
-    print(ArrComm)
+    #print(ArrComm)
+    return ArrComm
+    
 
 """def getNameTable(commOri, keyWord):
     posF = commOri.find(keyWord)
@@ -323,7 +344,7 @@ while(1):
     #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (-1,8,4)'  # input()
     #comandoOrig= 'SELECCIONA * DESDE a;'  # input()
     #comandoOrig= 'SELECCIONA a1, a3 DESDE a;'  # input()
-    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1> 0 AND a2<8 ;'  # input()
+    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 ;'#AND a2 < 8 OR a1 > a3;'  # input()
     print(comandoOrig)
     comandoOrig = comandoOrig[:len(comandoOrig) - 1]  # quita ; final
     comando = comandoOrig.split()
@@ -404,13 +425,16 @@ while(1):
         nombreTabla = ''        
         colsSelect = []
         if (comando[1] == '*'):
+            #print(">>>>",comando[1])
             nombreTabla = comando[3]
             selectA(nombreTabla)
         else:                     
             posFim = comandoOrig.find('DESDE')
             colsSelect = comandoOrig[comandoOrig.find('SELECCIONA') + 11: posFim-1]
             colsSelect = colsSelect.split(',') 
-            posDomde = comandoOrig.find('DONDE')           
+            posDomde = comandoOrig.find('DONDE')  
+            for j in range(len(colsSelect)):
+                colsSelect[j] = colsSelect[j].strip()  # strip() quita espacios blamco         
             
             if (posDomde <0):                
                 nombreTabla = comandoOrig[posFim + 6:]
@@ -420,10 +444,11 @@ while(1):
                 selectA(nombreTabla, colsSelect)
 
             else:  # case de where
-                nombreTabla = comandoOrig[posFim + 6:posDomde].strip()                
+                nombreTabla = comandoOrig[posFim + 6:posDomde].strip()                                
                 strConditions = comandoOrig[posDomde + 5:]
-                getConditions(strConditions)
+                strConditions = getConditions(strConditions)
                 #print(colsSelect)
+                selectA(nombreTabla, colsSelect, strConditions)
             """cndn = []
             for i in range(3, size):
                 cndn.append(comando[i])
