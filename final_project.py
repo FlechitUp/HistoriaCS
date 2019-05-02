@@ -1,25 +1,30 @@
 from shutil import copyfile
 from random import randint, uniform, random
 import csv
-#import numpy as np
+import numpy as np
+from os import remove
 """
     para copiar archivos se usa esa libreria con el comando
     copyfile(fuente_origen, fuente_destino)
 """
-def getAllCols(metadataFile,cols):
+def getAllCols(metadataFile,cols=[]):
     ruta = 'BD/' + metadataFile + '.mtd'
     archivo = open(ruta, 'r+')
     limes = archivo.readlines()    
     #print("###$$$$$ ", limes)
     allCols = limes[3].split(',')
     pos = {}
-    for i in range(len(allCols)):
-        for j in cols:
-            #print(allCols[i], ' == ',j)
-            if allCols[i].strip() == j: 
-                #print("Treu")
-                pos[j] = int(i)
-                break
+    if len( cols )>0:
+        for i in range(len(allCols)):
+            for j in cols:
+                #print(allCols[i], ' == ',j)
+                if allCols[i].strip() == j: 
+                    #print("Treu")
+                    pos[j] = int(i)
+                    break
+    else:
+        for i in range(len(allCols)):
+            pos[allCols[i].strip()] = int(i)                    
     #print(pos)
     return pos
 
@@ -76,6 +81,62 @@ def insert_n(nombre, elementos, n):
         insertar(nombre, elementos)
 
 
+def borrarA(nombreTabla, conditions=[]):
+    ruta = 'BD/' + nombreTabla + '.txt'
+    falg = True
+
+    if(conditions == []):
+        print("****")
+        remove(ruta)
+        print("borando papu, tabla ", nombreTabla)
+
+    else:
+        archivo = open(ruta, 'r+')
+      # borrar c1SELECCIOMA c1,c2 DESDE tabla DOMDE C1>0 OR C2<5
+        print("Domde ------------")
+        allPosCols = getAllCols(nombreTabla)  # is a dictio_ary
+        #print('all ps ', allPosCols)
+        lineas = archivo.readlines()  # csv.reader(archivo)
+        #pos = 1
+
+        #np.array([])
+        #while(pos<6): # 6 es la pos del OR        
+        archivo.seek(0)
+        for linea in lineas:
+            logOps = []
+            arrTF = []
+            cont = 0
+            print('leeeel ', len(conditions))
+            for i in range(1, len(conditions), 4):
+                cont = cont + 1
+                #print(conditions)
+                #print(conditions[i-1:i+2])
+                lineaT = linea.split(',')
+                mini_cond = com_sig(lineaT, conditions[i - 1:i + 2], allPosCols)
+                arrTF.append(mini_cond)
+                if (cont < (len(conditions) + 1) / 4):
+                    logOps.append(conditions[i + 2])
+            print ('tf',arrTF)
+            print ('lo',logOps)
+
+            boolResp = arrTF[0]
+            for i in range(len(logOps)):
+                if logOps[i] == 'AND':
+                    print( boolResp ,' and ', arrTF[i + 1])
+                    boolResp = boolResp and arrTF[i + 1]
+                elif logOps[i] == 'OR':
+                    boolResp = boolResp or arrTF[i + 1]
+            if not boolResp:
+                #print("ss ",linea)
+                archivo.write(linea)
+                #text = ''
+                #text = ''.join(str(e)+',' for e in linea)
+                #text = text[:len(text)-1]
+                #print(boolResp)
+        archivo.truncate()
+        archivo.close()
+
+
 def borrar(nombre, condicion):
     ruta = 'BD/' + nombre + '.txt'
     archivo = open(ruta, 'r+')
@@ -115,11 +176,14 @@ def borrar(nombre, condicion):
 
 def com_sig(line, condition, posCols):  #posCols es el diccio_ary
     pos = 1
+    #line = line.split(',')
     VALue =(posCols.get(condition[pos - 1]))
+    #print(condition[pos + 1])
     if(VALue == None):
         print("Error ", condition[pos - 1], "no fue seleccionada")
         return False
     if condition[pos] == '=':
+        #print(line[VALue], '=', condition[pos + 1])
         if (line[ VALue ]) == (condition[pos + 1]):
             return True
             #print(linea[conditions[pos - 1]])
@@ -156,8 +220,8 @@ def selectA(nombreTabla, cols='*', conditions=[]):
                 print(text)
         else:  # SELECCIOMA c1,c2 DESDE tabla DOMDE C1>0 OR C2<5
             print("Domde ------------")
-            allPosCols = getAllCols(nombreTabla,cols)      #is a dictio_ary       
-            lineas = csv.reader(archivo)#csv.DictReader(archivo)
+            allPosCols = getAllCols(nombreTabla,cols)      #is a dictio_ary                   
+            lineas = csv.reader(archivo) #csv.DictReader(archivo)
             pos = 1
 			#leo lineas de file a.txt
             '''for linea in lineas:
@@ -395,7 +459,7 @@ def printHelp():
     print("INSERTA [tabla] ([..elementos..]);")
     print("delete [tabla] DONDE [condicion]")
     print("SELECCIONA [tabla] DONDE [condicion]")
-    print("update [tabla] set [a_actualizar] DONDE [condicion]")
+    print("MODIFICA [tabla], col1, col2 DONDE [condicion]")
 
 
 # elementos = []
@@ -409,7 +473,11 @@ while(1):
     #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (15,3,9);'  # input()
     #comandoOrig= 'SELECCIONA * DESDE a;'  # input()
     #comandoOrig= 'SELECCIONA a1, a3 DESDE a;'  # input()
-    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 AND a3 < 8 OR a1 > 3;'  # input()
+    #comandoOrig = 'SELECCIONA a1, a2 DESDE a DONDE a1 < 0 AND a2 < 8;'# OR a1 > 3;'  # input()
+    #comandoOrig = 'BORRAR test1 ;'
+    comandoOrig = 'BORRAR test2 DONDE a1 = -1 AND a2 < 8;'# OR a3 < 2; '
+    #comandoOrig = 'INSERTA test2 (a1,a2,a3) VALORES (-1,7,4);'
+    #comandoOrig = 'MODIFICA a, a1 = 2 , a2 = 3 DONDE a1 < 7;'
     print(comandoOrig)
     comandoOrig = comandoOrig[:len(comandoOrig) - 1]  # quita ; final
     comando = comandoOrig.split()
@@ -475,12 +543,29 @@ while(1):
         insert_n(nombre, elms, n)
 
     # delete [tabla] DONDE [condicion]
+    # BORRA estudiantes
+    # BORRA estudiantes DONDE código = 2
+    # BORRA estudiantes DONDE código = 2 AND nombre =’renzo’
     elif comando[0] == 'BORRAR':  # considerar que la condicion va separada por ' '
-        nombreTabla = comando[1]
+        '''nombreTabla = comando[1]
         cndn = []
         for i in range(3, size):
             cndn.append(comando[i])
-        borrar(nombreTabla, cndn)
+        borrar(nombreTabla, cndn)'''
+        nombreTabla = comando[1]
+        colsSelect = []
+        posDomde = comandoOrig.find('DONDE')
+        if (posDomde < 0):
+            #print(">>>>",comando[1])
+            borrarA(nombreTabla)
+            #selectA(nombreTabla)
+        else:            
+            # case de where
+            strConditions = comandoOrig[posDomde + 5:]
+            strConditions = getConditions(strConditions)
+            #print(colsSelect)
+            borrarA(nombreTabla, strConditions)
+
 
     # select * DESDE [tabla];
     # select c1,c2 DESDE [tabla] DONDE [condicion]
@@ -520,8 +605,9 @@ while(1):
             select(nombreTabla, cndn)"""
 
     # update [tabla] set [a_actualizar] DONDE [condicion]
-    elif comando[0] == 'update':
+    elif comando[0] == 'MODIFICA':
         nombreTabla = comando[1]
+        nombreTabla = nombreTabla[:len(nombreTabla)-1]
         cndn = []
         actu = []
         actu.append(comando[3])
