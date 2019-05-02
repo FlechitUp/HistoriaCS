@@ -233,7 +233,7 @@ def selectA(nombreTabla, cols='*', conditions=[]):
                 #print('k  __',linea)
                 logOps = []
                 arrTF = []
-                cont = 1
+                cont = 0
                 for i in range(1,len(conditions),4):
                     cont = cont + 1
                     #print(conditions[i-1:i+2])
@@ -473,9 +473,9 @@ while(1):
     #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (15,3,9);'  # input()
     #comandoOrig= 'SELECCIONA * DESDE a;'  # input()
     #comandoOrig= 'SELECCIONA a1, a3 DESDE a;'  # input()
-    #comandoOrig = 'SELECCIONA a1, a2 DESDE a DONDE a1 < 0 AND a2 < 8;'# OR a1 > 3;'  # input()
+    comandoOrig = 'SELECCIONA a1, a2 DESDE a DONDE a1 < 0;'# AND a2 < 8;'# OR a1 > 3;'  # input()
     #comandoOrig = 'BORRAR test1 ;'
-    comandoOrig = 'BORRAR test2 DONDE a1 = -1 AND a2 < 8;'# OR a3 < 2; '
+    #comandoOrig = 'BORRAR test2 DONDE a1 = -1 AND a2 < 8;'# OR a3 < 2; '
     #comandoOrig = 'INSERTA test2 (a1,a2,a3) VALORES (-1,7,4);'
     #comandoOrig = 'MODIFICA a, a1 = 2 , a2 = 3 DONDE a1 < 7;'
     print(comandoOrig)
