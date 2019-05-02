@@ -1,26 +1,47 @@
 from shutil import copyfile
 from random import randint, uniform, random
 import csv
-import numpy as np
+#import numpy as np
 """
     para copiar archivos se usa esa libreria con el comando
     copyfile(fuente_origen, fuente_destino)
 """
-
+def getAllCols(metadataFile,cols):
+    ruta = 'BD/' + metadataFile + '.mtd'
+    archivo = open(ruta, 'r+')
+    limes = archivo.readlines()    
+    #print("###$$$$$ ", limes)
+    allCols = limes[3].split(',')
+    pos = {}
+    for i in range(len(allCols)):
+        for j in cols:
+            #print(allCols[i], ' == ',j)
+            if allCols[i].strip() == j: 
+                #print("Treu")
+                pos[j] = int(i)
+                break
+    #print(pos)
+    return pos
 
 def tablaNueva(nombre, columnas, tiposCols):
     #Crea file de metadata de Tabla
     ruta = 'BD/' + nombre + '.mtd'
     archivo = open(ruta, 'w')
 
-    textoMetadata = '--MTD,' + str(len(columnas)) + ',0,'
+    textoMetadata = ''
+    archivo.write('--MTD'+'\n')
+    archivo.write(str(len(columnas))+'\n')
+    archivo.write('0'+'\n')
     for cols in columnas:
-        textoMetadata += str(cols) + ','
+        textoMetadata = str(cols) + ','
+    textoMetadata = textoMetadata[:len(textoMetadata) - 1]
+    archivo.write(textoMetadata +'\n')
     for tcols in tiposCols:
-        textoMetadata += str(tcols) + ','
+        textoMetadata = str(tcols) + ','
+    textoMetadata = textoMetadata[:len(textoMetadata)-1]
+    archivo.write(textoMetadata+'\n')
         #archivo.write(cols + '\n')
-    textoMetadata += 'MTD--'
-    archivo.write(textoMetadata)
+    archivo.write('MTD--')
     archivo.close()
 
     #Crea tabla
@@ -30,7 +51,7 @@ def tablaNueva(nombre, columnas, tiposCols):
     for cols in columnas:
         texto += str(cols) + ','
     texto = texto[:len(texto) - 1]
-    archivo.write(texto)
+    archivo.write(texto+'\n')
     archivo.close()
     print('tabla creada correctamente!')
 
@@ -92,18 +113,22 @@ def borrar(nombre, condicion):
         print("borrado!")
 
 
-def com_sig(line,condition):
-    pos = 1;
+def com_sig(line, condition, posCols):  #posCols es el diccio_ary
+    pos = 1
+    VALue =(posCols.get(condition[pos - 1]))
+    if(VALue == None):
+        print("Error ", condition[pos - 1], "no fue seleccionada")
+        return False
     if condition[pos] == '=':
-        if int(line[condition[pos - 1]]) == int(condition[pos + 1]):
+        if (line[ VALue ]) == (condition[pos + 1]):
             return True
             #print(linea[conditions[pos - 1]])
     elif condition[1] == '<':
-        if int(line[condition[pos - 1]]) < int(condition[pos + 1]):
+        if (line[ VALue ]) < (condition[pos + 1]):
             return True
             # print(linea[conditions[pos - 1]])
     elif condition[1] == '>':
-        if int(line[condition[pos - 1]]) > int(condition[pos + 1]):
+        if (line[ posCols.get(condition[pos - 1]) ]) > (condition[pos + 1]):
             return True
             # print(linea[conditions[pos - 1]])
     return False
@@ -131,20 +156,24 @@ def selectA(nombreTabla, cols='*', conditions=[]):
                 print(text)
         else:  # SELECCIOMA c1,c2 DESDE tabla DOMDE C1>0 OR C2<5
             print("Domde ------------")
-            lineas = csv.DictReader(archivo)
+            allPosCols = getAllCols(nombreTabla,cols)      #is a dictio_ary       
+            lineas = csv.reader(archivo)#csv.DictReader(archivo)
             pos = 1
-
+			#leo lineas de file a.txt
+            '''for linea in lineas:
+                print('k  __',linea)'''
             #np.array([])
-            #while(pos<6): # 6 es la pos del OR
-            print(conditions[pos])
+            #while(pos<6): # 6 es la pos del OR            
+            #print(conditions[pos])
             for linea in lineas:
+                #print('k  __',linea)
                 logOps = []
                 arrTF = []
                 cont = 1
                 for i in range(1,len(conditions),4):
                     cont = cont + 1
                     #print(conditions[i-1:i+2])
-                    mini_cond = com_sig(linea,conditions[i-1:i+2])
+                    mini_cond = com_sig(linea, conditions[i - 1:i + 2],allPosCols)
                     arrTF.append(mini_cond)
                     if ( cont < (len(conditions)+1)/4):
                         logOps.append(conditions[i+2])
@@ -159,8 +188,11 @@ def selectA(nombreTabla, cols='*', conditions=[]):
                         boolResp = boolResp or arrTF[i+1]
                 if boolResp:
                     text = ''
-                    for col in cols:
-                        text += linea[col]+" "
+                    #print(allPosCols[0])
+                    for col in allPosCols:
+                        #print(col," tipe ",type(col))
+                        v = (allPosCols[col])                    
+                        text += linea[ v ] + ' '
                     print(text)
 
     archivo.close()
@@ -374,10 +406,10 @@ def printHelp():
 while(1):
     #printHelp()
     #comandoOrig = 'CREA_TABLA a (a1, int; a2 , int; a3, int);'  # input()
-    #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (15,3,7);'  # input()
+    #comandoOrig = 'INSERTA a (a1, a2, a3) VALORES (15,3,9);'  # input()
     #comandoOrig= 'SELECCIONA * DESDE a;'  # input()
     #comandoOrig= 'SELECCIONA a1, a3 DESDE a;'  # input()
-    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 ;'#AND a2 < 8 OR a1 > 3;'  # input()
+    comandoOrig = 'SELECCIONA a1, a3 DESDE a DONDE a1 < 0 AND a3 < 8 OR a1 > 3;'  # input()
     print(comandoOrig)
     comandoOrig = comandoOrig[:len(comandoOrig) - 1]  # quita ; final
     comando = comandoOrig.split()
